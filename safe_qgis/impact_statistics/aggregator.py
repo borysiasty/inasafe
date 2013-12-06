@@ -541,9 +541,8 @@ class Aggregator(QtCore.QObject):
             #add the class count fields to the layer
             fields = []
             for statistics_class in self.statistics_classes:
-                field = QgsField(
-                    '%s_%s' % (statistics_class, self.target_field),
-                    QtCore.QVariant.String)
+                field_name = self._aggregation_field_name(statistics_class)
+                field = QgsField(field_name, QtCore.QVariant.String)
                 fields.append(field)
             aggregation_provider.addAttributes(fields)
             self.layer.updateFields()
@@ -652,10 +651,7 @@ class Aggregator(QtCore.QObject):
                                 remaining_values[i])
                         attributes = {}
                         for k, v in results.iteritems():
-                            key = '%s_%s' % (k, self.target_field)
-                            #FIXME (MB) remove next line when we get rid of
-                            #shape files as internal format
-                            key = key[:10]
+                            key = self._aggregation_field_name(k)
                             field_index = field_map[key]
                             attributes[field_index] = v
 
@@ -737,10 +733,7 @@ class Aggregator(QtCore.QObject):
 
                 attributes = {}
                 for k, v in results.iteritems():
-                    key = '%s_%s' % (k, self.target_field)
-                    #FIXME (MB) remove next line when we get rid of
-                    #shape files as internal format
-                    key = key[:10]
+                    key = self._aggregation_field_name(k)
                     field_index = field_map[key]
                     attributes[field_index] = v
 
@@ -932,6 +925,19 @@ class Aggregator(QtCore.QObject):
     def _sum_field_name(self):
         """Field name for the sum column."""
         return (self.prefix + 'sum')[:10]
+
+    def _aggregation_field_name(self, statistic_class):
+        """Return name of aggregation field
+
+        :param statistic_class: A class of aggregation statistic.
+        :return:        A string of field name
+        """
+
+        name = '%s_%s' % (statistic_class, self.target_field)
+        #FIXME (MB) remove next line when we get rid of
+        #shape files as internal format
+        name = name[:10]
+        return name
 
     # noinspection PyDictCreation
     def _set_persistant_attributes(self):
