@@ -608,16 +608,7 @@ class Aggregator(QtCore.QObject):
                     # one aggregation polygon
 
                     # Calculate points for each polygon
-                    centroids = []
-                    for polygon in impact_geometries:
-                        if hasattr(polygon, 'outer_ring'):
-                            outer_ring = polygon.outer_ring
-                        else:
-                            # Assume it is an array
-                            outer_ring = polygon
-                        c = calculate_polygon_centroid(outer_ring)
-                        centroids.append(c)
-                    remaining_points = centroids
+                    remaining_points = self._get_centroids(impact_geometries)
 
                 else:
                     #this are already points data
@@ -960,6 +951,21 @@ class Aggregator(QtCore.QObject):
         #shape files as internal format
         name = name[:10]
         return name
+
+    def _get_centroids(self, polygons):
+        """
+        Get centroids of the polygon collection
+        """
+        centroids = []
+        for polygon in polygons:
+            if hasattr(polygon, 'outer_ring'):
+                outer_ring = polygon.outer_ring
+            else:
+                # Assume it is an array
+                outer_ring = polygon
+            c = calculate_polygon_centroid(outer_ring)
+            centroids.append(c)
+        return centroids
 
     # noinspection PyDictCreation
     def _set_persistant_attributes(self):
