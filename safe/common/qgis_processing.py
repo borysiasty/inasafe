@@ -26,6 +26,8 @@ import sys
 qgisprefix = '/usr'
 sys.path.insert(0, qgisprefix + '/share/qgis/python')
 sys.path.insert(1, qgisprefix + '/share/qgis/python/plugins')
+sys.path.insert(2, qgisprefix + '/local/share/qgis/python')
+sys.path.insert(3, qgisprefix + '/local/share/qgis/python/plugins')
 
 from safe.common.testing import get_qgis_app
 QGIS_APP, CANVAS, IFACE, PARENT = get_qgis_app()
