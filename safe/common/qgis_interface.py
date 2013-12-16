@@ -62,12 +62,15 @@ class QgisInterface(QObject):
         def dummy(*args, **kwargs):
             return QgisInterface(self.canvas)
         return dummy
+
     def __iter__(self):
         # It's for processing module
         return self
+
     def next(self):
         # It's for processing module
         raise StopIteration
+
     def layers(self):
         # It's for processing module
         # simulate iface.legendInterface().layers()

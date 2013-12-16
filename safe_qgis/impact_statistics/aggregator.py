@@ -93,6 +93,7 @@ except ImportError:
     # import processing from stub (use dummy  iface)
     from safe.common.qgis_processing import processing
 
+
 class Aggregator(QtCore.QObject):
     """The aggregator class facilitates aggregation of impact function results.
     """
