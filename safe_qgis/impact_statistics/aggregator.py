@@ -82,17 +82,6 @@ WARNING_STYLE = styles.WARNING_STYLE
 LOGGER = logging.getLogger('InaSAFE')
 #from pydev import pydevd
 
-# If inasafe is running as qgis plugin,
-# it can import processing,
-# if inasafe is called from tests as commandline application,
-# we need to use dummy QgsApplication and iface objects
-try:
-    import processing
-except ImportError:
-    # Aggregator is running in testing mode, so
-    # import processing from stub (use dummy  iface)
-    from safe.common.qgis_processing import processing
-
 
 class Aggregator(QtCore.QObject):
     """The aggregator class facilitates aggregation of impact function results.
@@ -129,9 +118,6 @@ class Aggregator(QtCore.QObject):
         self.target_field = None
         self.impact_layer_attributes = []
         self.aoi_mode = True
-
-        #self.processing = PROCESSING
-        self.processing = processing
 
         # If this flag is not True, no aggregation or postprocessing will run
         # this is set as True by validateKeywords()
@@ -723,15 +709,6 @@ class Aggregator(QtCore.QObject):
 
             elif safe_impact_layer.is_line_data:
                 LOGGER.debug('Doing line in polygon aggregation')
-                output_directory = temp_dir(sub_dir='pre-process')
-                output_filename = unique_filename(
-                    suffix='.shp', dir=output_directory)
-                res = self.processing.runalg('qgis:sumlinelengths',
-                                        impact_layer,
-                                        self.layer,
-                                        'LEN', 'COUNT',
-                                        output_filename)
-                print res
 
             else:
                 message = m.Paragraph(
