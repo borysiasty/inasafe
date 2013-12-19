@@ -867,10 +867,29 @@ class Dock(QtGui.QDockWidget, Ui_DockBase):
         self.calculator.set_hazard_layer(self.aggregator.hazard_layer)
         self.calculator.set_exposure_layer(self.aggregator.exposure_layer)
 
+    def get_extent_as_array(self):
+        """Return current extent as array
+
+        :returns: a list in the form [xmin, ymin, xmax, ymax] where all
+                coordinates provided are in Geographic / EPSG:4326.
+        :rtype: list
+        """
+        # TODO: This function is not covered by tests
+
+        rectangle = self.iface.mapCanvas().extent()
+        if self.iface.mapCanvas().hasCrsTransformEnabled():
+            crs = self.iface.mapCanvas().mapRenderer().destinationCrs()
+        else:
+            crs = QgsCoordinateReferenceSystem()
+            crs.createFromSrid(4326)
+        geo_extent = extent_to_geo_array(rectangle, crs)
+
+        return geo_extent
+
     def prepare_aggregator(self):
         """Create an aggregator for this analysis run."""
         self.aggregator = Aggregator(
-            self.iface,
+            self.get_extent_as_array(),
             self.get_aggregation_layer())
         self.aggregator.show_intermediate_layers = \
             self.show_intermediate_layers

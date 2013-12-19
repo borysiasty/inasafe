@@ -87,7 +87,7 @@ class Aggregator(QtCore.QObject):
     """The aggregator class facilitates aggregation of impact function results.
     """
 
-    def __init__(self, iface, aggregation_layer):
+    def __init__(self, extent, aggregation_layer):
         """Director for aggregation based operations.
 
         :param aggregation_layer: Layer representing clipped aggregation
@@ -111,7 +111,7 @@ class Aggregator(QtCore.QObject):
             'inasafe/use_native_zonal_stats', False, type=bool))
         self.use_native_zonal_stats = flag
 
-        self.iface = iface
+        self.extent = extent
         self._keyword_io = KeywordIO()
         self._defaults = breakdown_defaults()
         self.error_message = None
@@ -1339,16 +1339,6 @@ class Aggregator(QtCore.QObject):
         :raises: InvalidLayerError, UnsupportedProviderError, KeywordDbError
         """
 
-        # Note: this code duplicates from Dock.viewportGeoArray - make DRY. TS
-
-        rectangle = self.iface.mapCanvas().extent()
-        if self.iface.mapCanvas().hasCrsTransformEnabled():
-            crs = self.iface.mapCanvas().mapRenderer().destinationCrs()
-        else:
-            crs = QgsCoordinateReferenceSystem()
-            crs.createFromSrid(4326)
-        geo_extent = extent_to_geo_array(rectangle, crs)
-
         if not self.layer.isValid():
             message = self.tr(
                 'An exception occurred when creating the entire area layer.')
@@ -1368,8 +1358,8 @@ class Aggregator(QtCore.QObject):
         # noinspection PyCallByClass,PyTypeChecker,PyArgumentList
         feature.setGeometry(QgsGeometry.fromRect(
             QgsRectangle(
-                QgsPoint(geo_extent[0], geo_extent[1]),
-                QgsPoint(geo_extent[2], geo_extent[3]))))
+                QgsPoint(self.extent[0], self.extent[1]),
+                QgsPoint(self.extent[2], self.extent[3]))))
         feature[attribute_name] = self.tr('Entire area')
         provider.addFeatures([feature])
 

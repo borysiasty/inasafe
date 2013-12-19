@@ -28,7 +28,7 @@ from os.path import join
 pardir = os.path.abspath(join(os.path.dirname(__file__), '..'))
 sys.path.append(pardir)
 
-from qgis.core import QgsVectorLayer
+from qgis.core import QgsVectorLayer, QgsCoordinateReferenceSystem
 
 from safe.common.testing import get_qgis_app
 from safe_qgis import breakdown_defaults
@@ -88,6 +88,11 @@ class AggregatorTest(unittest.TestCase):
 
         self._keywordIO = KeywordIO()
         self._defaults = breakdown_defaults()
+
+        # Set extent as Jakarta extent
+        geo_crs = QgsCoordinateReferenceSystem()
+        geo_crs.createFromSrid(4326)
+        self.extent = extent_to_geo_array(CANVAS.extent(), geo_crs)
 
     def test_combo_aggregation_loaded_project(self):
         """Aggregation combo changes properly according loaded layers"""
@@ -293,7 +298,7 @@ class AggregatorTest(unittest.TestCase):
             explode_flag=True,
             explode_attribute=aggregation_attribute)
 
-        aggregator = Aggregator(None, aggregation_layer)
+        aggregator = Aggregator(self.extent, aggregation_layer)
         # setting up
         aggregator.is_valid = True
         aggregator.layer = aggregation_layer
