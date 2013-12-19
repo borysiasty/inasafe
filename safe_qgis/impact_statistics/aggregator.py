@@ -98,9 +98,9 @@ class Aggregator(QtCore.QObject):
 
         QtCore.QObject.__init__(self)
 
-        self.hazard_layer = None
-        self.exposure_layer = None
-        self.safe_layer = None
+        self.hazard_layer = None    # Used in deintersect() method
+        self.exposure_layer = None  # Used in deintersect() method
+        self.safe_layer = None      # Aggregation layer in SAFE format
 
         self.prefix = 'aggr_'
         self.attributes = {}
@@ -895,6 +895,9 @@ class Aggregator(QtCore.QObject):
                 raise
         # Area Of Interest (AOI) mode flag is False
         else:
+            # TODO: (DK) set extent in Dock, then use the self.extent
+            # remove extent calculation from here
+
             # we use only the exposure extent, because both exposure and hazard
             # have the same extent at this point.
             geo_extent = extent_to_geo_array(

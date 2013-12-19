@@ -256,7 +256,8 @@ class AggregatorTest(unittest.TestCase):
             self,
             impact_layer,
             expected_results,
-            use_native_zonal_stats=False):
+            use_native_zonal_stats=False,
+            use_aoi_mode=False):
         """Helper to calculate aggregation.
 
         Expected results is split into two lists - one list contains numeric
@@ -284,28 +285,18 @@ class AggregatorTest(unittest.TestCase):
             os.path.join(BOUNDDATA, 'kabupaten_jakarta.shp'),
             'test aggregation',
             'ogr')
-        # create a copy of aggregation layer
-        geo_extent = extent_to_geo_array(
-            aggregation_layer.extent(),
-            aggregation_layer.crs())
 
-        aggregation_attribute = self._keywordIO.read_keywords(
-            aggregation_layer, self._defaults['AGGR_ATTR_KEY'])
-        # noinspection PyArgumentEqualDefault
-        aggregation_layer = clip_layer(
-            layer=aggregation_layer,
-            extent=geo_extent,
-            explode_flag=True,
-            explode_attribute=aggregation_attribute)
+        # Dummy layers. Them are used in aggregator._prepare_layer
+        # The extent of the layers must be equal to aggregator.extent
+        hazard_layer = exposure_layer = aggregation_layer
 
         aggregator = Aggregator(self.extent, aggregation_layer)
         # setting up
+        aggregator.aoi_mode = use_aoi_mode
+        aggregator.set_layers(hazard_layer, exposure_layer)
         aggregator.is_valid = True
-        aggregator.layer = aggregation_layer
-        aggregator.safe_layer = safe_read_layer(
-            str(aggregator.layer.source()))
-        aggregator.aoi_mode = False
         aggregator.use_native_zonal_stats = use_native_zonal_stats
+
         aggregator.aggregate(impact_layer)
 
         provider = aggregator.layer.dataProvider()
