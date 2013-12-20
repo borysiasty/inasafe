@@ -541,29 +541,8 @@ class Aggregator(QtCore.QObject):
         field_map = {}
         field_index = None
 
-        try:
-            self.target_field = self.read_keywords(
-                impact_layer, 'target_field')
-        except KeywordNotFoundError:
-            message = m.Paragraph(
-                self.tr(
-                    'No "target_field" keyword found in the impact layer %s '
-                    'keywords. The impact function should define this.') % (
-                        impact_layer.name()))
-            LOGGER.debug('Skipping postprocessing due to: %s' % message)
-            self.error_message = message
-            return
-        target_field_index = impact_layer.fieldNameIndex(
-            self.target_field)
-        #if a feature has no field called
-        if target_field_index == -1:
-            message = m.Paragraph(
-                self.tr('No attribute "%s" was found in the attribute table '
-                        'for layer "%s". The impact function must define this'
-                        ' attribute for postprocessing to work.') % (
-                            self.target_field, impact_layer.name()))
-            LOGGER.debug('Skipping postprocessing due to: %s' % message)
-            self.error_message = message
+        if not self._setup_target_field(impact_layer):
+            # An unexpected error occurs
             return
 
         # start data retrieval
@@ -1413,3 +1392,40 @@ class Aggregator(QtCore.QObject):
             signal=message_type,
             sender=self,
             message=message)
+
+    def _setup_target_field(self, impact_layer):
+        """Set up self.target_field
+
+        :param impact_layer: Layer to be processed.
+        :type layer: QgsMapLayer, QgsVectorLayer
+
+        :returns: True if the layer contains the target field,
+                  False if any errors occur.
+        :rtype: bool
+
+        """
+        try:
+            self.target_field = self.read_keywords(
+                impact_layer, 'target_field')
+        except KeywordNotFoundError:
+            message = m.Paragraph(
+                self.tr(
+                    'No "target_field" keyword found in the impact layer %s '
+                    'keywords. The impact function should define this.') % (
+                        impact_layer.name()))
+            LOGGER.debug('Skipping postprocessing due to: %s' % message)
+            self.error_message = message
+            return False
+        target_field_index = impact_layer.fieldNameIndex(
+            self.target_field)
+        #if a feature has no field called
+        if target_field_index == -1:
+            message = m.Paragraph(
+                self.tr('No attribute "%s" was found in the attribute table '
+                        'for layer "%s". The impact function must define this'
+                        ' attribute for postprocessing to work.') % (
+                            self.target_field, impact_layer.name()))
+            LOGGER.debug('Skipping postprocessing due to: %s' % message)
+            self.error_message = message
+            return False
+        return True

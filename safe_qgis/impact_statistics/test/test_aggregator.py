@@ -210,6 +210,22 @@ class AggregatorTest(unittest.TestCase):
         message = ('The aggregation should be None. Found: %s' % attribute)
         assert attribute is None, message
 
+    def test_setup_target_field(self):
+        """Test setup up target field is correct
+        """
+        layer = QgsVectorLayer(
+            os.path.join(BOUNDDATA, 'kabupaten_jakarta.shp'),
+            'test aggregation',
+            'ogr')
+        aggregator = Aggregator(self.extent, None)
+        self.assertFalse(aggregator._setup_target_field(layer))
+
+        impact_layer_name = os.path.join(TESTDATA,
+                                         'aggregation_test_impact_vector.shp')
+        impact_layer = QgsVectorLayer(impact_layer_name,
+                                      'test', 'ogr')
+        self.assertTrue(aggregator._setup_target_field(impact_layer))
+
     def test_preprocessing(self):
         """Preprocessing results are correct.
 
