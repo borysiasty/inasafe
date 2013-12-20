@@ -894,16 +894,8 @@ class Dock(QtGui.QDockWidget, Ui_DockBase):
         self.aggregator.show_intermediate_layers = \
             self.show_intermediate_layers
         # Buffer aggregation keywords in case user presses cancel on kw dialog
-        try:
-            original_keywords = self.keyword_io.read_keywords(
+        original_keywords = self.keyword_io.read_keywords(
                 self.aggregator.layer)
-        except AttributeError:
-            original_keywords = {}
-        except NoKeywordsFoundError:
-            # No kw file was found for layer - create an empty one.
-            original_keywords = {}
-            self.keyword_io.write_keywords(
-                self.aggregator.layer, original_keywords)
         LOGGER.debug('my pre dialog keywords' + str(original_keywords))
         LOGGER.debug(
             'AOImode: %s' % str(self.aggregator.aoi_mode))

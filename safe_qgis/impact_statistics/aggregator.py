@@ -68,6 +68,7 @@ from safe_qgis.safe_interface import (
     PointsInputError)
 from safe_qgis.exceptions import (
     KeywordNotFoundError,
+    NoKeywordsFoundError,
     InvalidParameterError,
     KeywordDbError,
     InvalidAggregatorError,
@@ -117,7 +118,7 @@ class Aggregator(QtCore.QObject):
         self.error_message = None
         self.target_field = None
         self.impact_layer_attributes = []
-        self.aoi_mode = True
+        #self.aoi_mode = True
 
         # If this flag is not True, no aggregation or postprocessing will run
         # this is set as True by validateKeywords()
@@ -138,6 +139,17 @@ class Aggregator(QtCore.QObject):
         self.statistics_type = None
         self.statistics_classes = None
         self.preprocessed_feature_count = None
+
+        # If keywords don't assigned with self.layer,
+        # set up dummy keywords
+        try:
+            _ = self.read_keywords(
+                self.layer)
+        except NoKeywordsFoundError:
+            # No kw file was found for layer - create an empty one.
+            keywords = {}
+            self.write_keywords(
+                self.layer, keywords)
 
     def read_keywords(self, layer, keyword=None):
         """It is a wrapper around self._keyword_io.read_keywords
