@@ -290,11 +290,13 @@ class AggregatorTest(unittest.TestCase):
         # The extent of the layers must be equal to aggregator.extent
         hazard_layer = exposure_layer = aggregation_layer
 
-        aggregator = Aggregator(self.extent, aggregation_layer)
         # setting up
-        aggregator.aoi_mode = use_aoi_mode
+        if not use_aoi_mode:
+            aggregator = Aggregator(self.extent, aggregation_layer)
+        else:
+            aggregator = Aggregator(self.extent, None)
         aggregator.set_layers(hazard_layer, exposure_layer)
-        aggregator.is_valid = True
+        aggregator.validate_keywords()
         aggregator.use_native_zonal_stats = use_native_zonal_stats
 
         aggregator.aggregate(impact_layer)
@@ -410,6 +412,12 @@ class AggregatorTest(unittest.TestCase):
         ]
 
         self._aggregate(impact_layer, expected_results)
+
+        expected_results = [
+            ['Entire area', '3']
+        ]
+
+        self._aggregate(impact_layer, expected_results, use_aoi_mode=True)
 
 if __name__ == '__main__':
     suite = unittest.makeSuite(AggregatorTest)
