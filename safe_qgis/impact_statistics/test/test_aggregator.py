@@ -326,10 +326,11 @@ class AggregatorTest(unittest.TestCase):
             feature_numeric_results = []
             attributes = feature.attributes()
             for attr in attributes:
-                if isinstance(attr, (int, float)):
-                    feature_numeric_results.append(attr)
-                else:
-                    feature_string_results.append(attr)
+                try:
+                    value = float(attr)
+                    feature_numeric_results.append(value)
+                except ValueError:
+                    feature_string_results.append(str(attr))
 
             numeric_results.append(feature_numeric_results)
             string_results.append(feature_string_results)
@@ -402,6 +403,8 @@ class AggregatorTest(unittest.TestCase):
         - be flooded
         - kabupaten_jakarta_singlepart.shp
         """
+
+        # Aggregation in sum mode
         impact_layer = Vector(
             data=os.path.join(TESTDATA, 'aggregation_test_impact_vector.shp'),
             name='test vector impact')
@@ -434,6 +437,28 @@ class AggregatorTest(unittest.TestCase):
         ]
 
         self._aggregate(impact_layer, expected_results, use_aoi_mode=True)
+
+
+        # Aggregation in class_count mode
+        impact_layer = Vector(
+            data=TESTDATA + '/aggregation_test_impact_vector_class_count.shp',
+            name='test vector impact')
+
+        expected_results = [
+            ['Entire area', '2', '3', '0']
+        ]
+        self._aggregate(impact_layer, expected_results, use_aoi_mode=True)
+
+        expected_results = [
+            ['JAKARTA BARAT', '1', '2', '0'],
+            ['JAKARTA PUSAT', '1', '0', '0'],
+            ['JAKARTA SELATAN', '0', '0', '0'],
+            ['JAKARTA UTARA', '0', '1', '0'],
+            ['JAKARTA TIMUR', '0', '0', '0']
+        ]
+
+        self._aggregate(impact_layer, expected_results)
+
 
 if __name__ == '__main__':
     suite = unittest.makeSuite(AggregatorTest)
