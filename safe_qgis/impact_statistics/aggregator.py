@@ -523,29 +523,20 @@ class Aggregator(QtCore.QObject):
     def _aggregrate_vector_impact(self, impact_layer, safe_impact_layer):
         """Performs Aggregation postprocessing step on vector impact layers.
 
-        :param impact_layer: A raster impact layer.
-        :type impact_layer: QgsRasterLayer
+        :param impact_layer: A vector impact layer.
+        :type impact_layer: QgsVectorLayer
 
-        TODO: Marco document this please!
-
-        :param safe_impact_layer:
+        :param safe_impact_layer: The impact layer in SAFE format
         :type safe_impact_layer: read_layer
-
-        TODO: Break this function up into smaller functions!
-
         """
         #TODO (MB) implement line aggregation
-
-        field_map = {}
-        field_index = None
 
         if not self._setup_target_field(impact_layer):
             # An unexpected error occurs
             return
 
-        # start data retrieval
+        # Add fields for store aggregation atributes
         aggregation_provider = self.layer.dataProvider()
-
         if self.statistics_type == 'class_count':
             #add the class count fields to the layer
             fields = []
@@ -555,11 +546,6 @@ class Aggregator(QtCore.QObject):
                 fields.append(field)
             aggregation_provider.addAttributes(fields)
             self.layer.updateFields()
-
-            temp_aggregation_field_map = aggregation_provider.fieldNameMap()
-            for k, v in temp_aggregation_field_map.iteritems():
-                field_map[str(k)] = v
-
         elif self.statistics_type == 'sum':
             #add the total field to the layer
             aggregation_field = self._sum_field_name()
@@ -567,134 +553,14 @@ class Aggregator(QtCore.QObject):
                 aggregation_field, QtCore.QVariant.Int)])
             self.layer.updateFields()
 
-            field_index = self.layer.fieldNameIndex(
-                aggregation_field)
-
-        impact_geometries = safe_impact_layer.get_geometry()
-        impact_values = safe_impact_layer.get_data()
-
-        attributes = None
-        # TODO: Woooow dude - these if blocks are too massive - refactor
-        # the code inside them into smaller testable functions!
-        aggregation_units = self.safe_layer.get_geometry()
-        if (safe_impact_layer.is_point_data or
-                safe_impact_layer.is_polygon_data):
+        if safe_impact_layer.is_point_data:
             LOGGER.debug('Doing point in polygon aggregation')
-
-            remaining_values = impact_values
-
-            if safe_impact_layer.is_polygon_data:
-                # Using centroids to do polygon in polygon aggregation
-                # this is always ok because
-                # deintersect() took care of splitting
-                # polygons that spawn across multiple postprocessing
-                # polygons. After deintersect()
-                # each impact polygon will never be contained by more than
-                # one aggregation polygon
-
-                # Calculate points for each polygon
-                remaining_points = self._get_centroids(impact_geometries)
-
-            else:
-                #this are already points data
-                remaining_points = impact_geometries
-
-            #iterate over the aggregation units
-            for polygon_index, polygon in enumerate(aggregation_units):
-                if hasattr(polygon, 'outer_ring'):
-                    outer_ring = polygon.outer_ring
-                    inner_rings = polygon.inner_rings
-                else:
-                    # Assume it is an array
-                    outer_ring = polygon
-                    inner_rings = None
-
-                try:
-                    # noinspection PyArgumentEqualDefault
-                    inside, outside = points_in_and_outside_polygon(
-                        remaining_points,
-                        outer_ring,
-                        holes=inner_rings,
-                        closed=True,
-                        check_input=True)
-                except PointsInputError:  # too few points provided
-                    inside = []
-                    outside = []
-                #self.impact_layer_attributes is a list of list of dict
-                #[
-                #   [{...},{...},{...}],
-                #   [{...},{...},{...}]
-                #]
-                self.impact_layer_attributes.append([])
-                if self.statistics_type == 'class_count':
-                    results = OrderedDict()
-                    for statistics_class in self.statistics_classes:
-                        results[statistics_class] = 0
-
-                    for i in inside:
-                        key = remaining_values[i][self.target_field]
-                        try:
-                            results[key] += 1
-                        except KeyError:
-                            error = (
-                                'StatisticsClasses %s does not include '
-                                'the %s class which was found in the '
-                                'data. This is a problem in the impact '
-                                'function statistics_classes definition' %
-                                (self.statistics_classes,
-                                key))
-                            raise KeyError(error)
-
-                        self.impact_layer_attributes[polygon_index].append(
-                            remaining_values[i])
-                    attributes = {}
-                    for k, v in results.iteritems():
-                        key = self._aggregation_field_name(k)
-                        field_index = field_map[key]
-                        attributes[field_index] = v
-
-                elif self.statistics_type == 'sum':
-                    #by default sum attributes
-                    total = 0
-                    for i in inside:
-                        try:
-                            total += remaining_values[i][
-                                self.target_field]
-                        except TypeError:
-                            pass
-
-                        #add all attributes to the impact_layer_attributes
-                        self.impact_layer_attributes[polygon_index].append(
-                            remaining_values[i])
-                    attributes = {field_index: total}
-
-                # Add features inside this polygon
-                feature_ide = polygon_index
-                aggregation_provider.changeAttributeValues(
-                    {feature_ide: attributes})
-
-                # make outside points the input to the next iteration
-                # this could maybe be done more quickly using directly
-                # numpy arrays like this:
-                # remaining_points = remaining_points[outside]
-                # remaining_values =
-                # [remaining_values[i] for i in outside]
-                temp_points = []
-                temp_values = []
-                for i in outside:
-                    temp_points.append(remaining_points[i])
-                    temp_values.append(remaining_values[i])
-                remaining_points = temp_points
-                remaining_values = temp_values
-
-                # LOGGER.debug('Before: ' + str(len(remaining_values)))
-                # LOGGER.debug('After: ' + str(len(remaining_values)))
-                # LOGGER.debug('Inside: ' + str(len(inside)))
-                # LOGGER.debug('Outside: ' + str(len(outside)))
-
+            self._aggregate_point_impact(safe_impact_layer)
+        elif safe_impact_layer.is_polygon_data:
+            LOGGER.debug('Doing polygon in polygon aggregation')
+            self._aggregate_polygon_impact(safe_impact_layer)
         elif safe_impact_layer.is_line_data:
             LOGGER.debug('Doing line in polygon aggregation')
-
         else:
             message = m.Paragraph(
                 self.tr(
@@ -704,10 +570,6 @@ class Aggregator(QtCore.QObject):
             LOGGER.debug('Skipping postprocessing due to: %s' % message)
             self.error_message = message
             self.layer.commitChanges()
-            return
-
-        self.layer.commitChanges()
-        return
 
     def _aggregate_raster_impact(self, impact_layer):
         """Aggregate on a raster impact layer by using zonal statistics.
@@ -807,6 +669,148 @@ class Aggregator(QtCore.QObject):
                 }
                 provider.changeAttributeValues({feature_id: attributes})
 
+    def _aggregate_polygon_impact(self, safe_impact_layer):
+        """Aggregation of polygons in polygons
+
+        :param safe_impact_layer: The impact layer in SAFE format
+        :type safe_impact_layer: read_layer
+        """
+        # Using centroids to do polygon in polygon aggregation
+        # this is always ok because
+        # deintersect() took care of splitting
+        # polygons that spawn across multiple postprocessing
+        # polygons. After deintersect()
+        # each impact polygon will never be contained by more than
+        # one aggregation polygon
+
+        # Calculate points for each polygon
+        impact_geometries = safe_impact_layer.get_geometry()
+        aggregation_points = self._get_centroids(impact_geometries)
+        self._aggregate_point_impact(safe_impact_layer, aggregation_points)
+
+    def _aggregate_point_impact(self, safe_impact_layer, aggregation_points=None):
+        """Aggregation of points in polygons
+
+        :param safe_impact_layer: The impact layer in SAFE format
+        :type safe_impact_layer: read_layer
+
+        :param aggregation_points: Points that are used for aggregation
+                                   if aggregation_points==None,
+                                   all points from  safe_impact_layer are used
+        :type aggregation_points: self._get_centroids
+        """
+
+        aggreg_remaining_values = safe_impact_layer.get_data()
+        aggregation_units = self.safe_layer.get_geometry()
+        aggregation_provider = self.layer.dataProvider()
+
+        field_map = {}
+        temp_aggregation_field_map = aggregation_provider.fieldNameMap()
+        for k, v in temp_aggregation_field_map.iteritems():
+            field_map[str(k)] = v
+
+        if aggregation_points is None:
+            # Take all points
+            impact_geometries = safe_impact_layer.get_geometry()
+            aggregation_points = impact_geometries
+
+        #iterate over the aggregation units
+        attributes = None
+        for polygon_index, polygon in enumerate(aggregation_units):
+            if hasattr(polygon, 'outer_ring'):
+                outer_ring = polygon.outer_ring
+                inner_rings = polygon.inner_rings
+            else:
+                # Assume it is an array
+                outer_ring = polygon
+                inner_rings = None
+
+            try:
+                # noinspection PyArgumentEqualDefault
+                inside, outside = points_in_and_outside_polygon(
+                    aggregation_points,
+                    outer_ring,
+                    holes=inner_rings,
+                    closed=True,
+                    check_input=True)
+            except PointsInputError:  # too few points provided
+                inside = []
+                outside = []
+            #self.impact_layer_attributes is a list of list of dict
+            #[
+            #   [{...},{...},{...}],
+            #   [{...},{...},{...}]
+            #]
+            self.impact_layer_attributes.append([])
+            if self.statistics_type == 'class_count':
+                results = OrderedDict()
+                for statistics_class in self.statistics_classes:
+                    results[statistics_class] = 0
+
+                for i in inside:
+                    key = aggreg_remaining_values[i][self.target_field]
+                    try:
+                        results[key] += 1
+                    except KeyError:
+                        error = (
+                            'StatisticsClasses %s does not include '
+                            'the %s class which was found in the '
+                            'data. This is a problem in the impact '
+                            'function statistics_classes definition' %
+                            (self.statistics_classes,
+                            key))
+                        raise KeyError(error)
+
+                    self.impact_layer_attributes[polygon_index].append(
+                        aggreg_remaining_values[i])
+                attributes = {}
+                for k, v in results.iteritems():
+                    key = self._aggregation_field_name(k)
+                    field_index = field_map[key]
+                    attributes[field_index] = v
+
+            elif self.statistics_type == 'sum':
+                #by default sum attributes
+                aggregation_field = self._sum_field_name()
+                field_index = field_map[aggregation_field]
+                total = 0
+                for i in inside:
+                    try:
+                        total += aggreg_remaining_values[i][
+                            self.target_field]
+                    except TypeError:
+                        pass
+
+                    #add all attributes to the impact_layer_attributes
+                    self.impact_layer_attributes[polygon_index].append(
+                        aggreg_remaining_values[i])
+                attributes = {field_index: total}
+
+            # Add features inside this polygon
+            feature_ide = polygon_index
+            aggregation_provider.changeAttributeValues(
+                {feature_ide: attributes})
+
+            # make outside points the input to the next iteration
+            # this could maybe be done more quickly using directly
+            # numpy arrays like this:
+            # aggregation_points = aggregation_points[outside]
+            # aggreg_remaining_values =
+            # [aggreg_remaining_values[i] for i in outside]
+            temp_points = []
+            temp_values = []
+            for i in outside:
+                temp_points.append(aggregation_points[i])
+                temp_values.append(aggreg_remaining_values[i])
+            aggregation_points = temp_points
+            aggreg_remaining_values = temp_values
+            # LOGGER.debug('Before: ' + str(len(aggreg_remaining_values)))
+            # LOGGER.debug('After: ' + str(len(aggreg_remaining_values)))
+            # LOGGER.debug('Inside: ' + str(len(inside)))
+            # LOGGER.debug('Outside: ' + str(len(outside)))
+
+        self.layer.commitChanges()
+
     def _prepare_layer(self):
         """Prepare the aggregation layer to match analysis extents.
 
@@ -896,6 +900,9 @@ class Aggregator(QtCore.QObject):
     def _get_centroids(self, polygons):
         """
         Get centroids of the polygon collection
+
+        :returns: List of centroids of the polygons
+        :rtype: List
         """
         centroids = []
         for polygon in polygons:
