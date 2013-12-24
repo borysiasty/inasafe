@@ -408,7 +408,6 @@ class AggregatorTest(unittest.TestCase):
         impact_layer = Vector(
             data=os.path.join(TESTDATA, 'aggregation_test_impact_vector.shp'),
             name='test vector impact')
-
         expected_results = [
             ['JAKARTA BARAT', '87'],
             ['JAKARTA PUSAT', '117'],
@@ -417,11 +416,9 @@ class AggregatorTest(unittest.TestCase):
             ['JAKARTA TIMUR', '198']
         ]
         self._aggregate(impact_layer, expected_results)
-
         impact_layer = Vector(
             data=TESTDATA + '/aggregation_test_impact_vector_small.shp',
             name='test vector impact')
-
         expected_results = [
             ['JAKARTA BARAT', '2'],
             ['JAKARTA PUSAT', '0'],
@@ -429,26 +426,20 @@ class AggregatorTest(unittest.TestCase):
             ['JAKARTA UTARA', '1'],
             ['JAKARTA TIMUR', '0']
         ]
-
         self._aggregate(impact_layer, expected_results)
-
         expected_results = [
             ['Entire area', '3']
         ]
-
         self._aggregate(impact_layer, expected_results, use_aoi_mode=True)
-
 
         # Aggregation in class_count mode
         impact_layer = Vector(
             data=TESTDATA + '/aggregation_test_impact_vector_class_count.shp',
             name='test vector impact')
-
         expected_results = [
             ['Entire area', '2', '3', '0']
         ]
         self._aggregate(impact_layer, expected_results, use_aoi_mode=True)
-
         expected_results = [
             ['JAKARTA BARAT', '1', '2', '0'],
             ['JAKARTA PUSAT', '1', '0', '0'],
@@ -456,7 +447,6 @@ class AggregatorTest(unittest.TestCase):
             ['JAKARTA UTARA', '0', '1', '0'],
             ['JAKARTA TIMUR', '0', '0', '0']
         ]
-
         self._aggregate(impact_layer, expected_results)
 
 

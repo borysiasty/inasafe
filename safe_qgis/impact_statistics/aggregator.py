@@ -688,7 +688,8 @@ class Aggregator(QtCore.QObject):
         aggregation_points = self._get_centroids(impact_geometries)
         self._aggregate_point_impact(safe_impact_layer, aggregation_points)
 
-    def _aggregate_point_impact(self, safe_impact_layer, aggregation_points=None):
+    def _aggregate_point_impact(self, safe_impact_layer,
+                                aggregation_points=None):
         """Aggregation of points in polygons
 
         :param safe_impact_layer: The impact layer in SAFE format
