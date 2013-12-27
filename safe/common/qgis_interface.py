@@ -53,6 +53,8 @@ class QgisInterface(QObject):
         QgsMapLayerRegistry.instance().layersAdded.connect(self.addLayers)
         # noinspection PyArgumentList
         QgsMapLayerRegistry.instance().layerWasAdded.connect(self.addLayer)
+        # noinspection PyArgumentList
+        QgsMapLayerRegistry.instance().removeAll.connect(self.removeAllLayers)
 
         # It's for processing module
         self.destCrs = None
@@ -109,6 +111,12 @@ class QgisInterface(QObject):
                  not need this method much.
         """
         pass
+
+    @pyqtSlot()
+    def removeAllLayers(self):
+        """Remove layers from the canvas before they get deleted.
+        """
+        self.canvas.setLayerSet([])
 
     def newProject(self):
         """Create new project
