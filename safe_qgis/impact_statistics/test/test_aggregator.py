@@ -433,9 +433,10 @@ class AggregatorTest(unittest.TestCase):
         self._aggregate(impact_layer, expected_results, use_aoi_mode=True)
 
         # Aggregation in class_count mode
-        data_path = os.path.join(UNITDATA,
-                                 'impact',
-                                 'aggregation_test_impact_vector_class_count.shp')
+        data_path = os.path.join(
+            UNITDATA,
+            'impact',
+            'aggregation_test_impact_vector_class_count.shp')
         impact_layer = Vector(
             data=data_path,
             name='test vector impact')
