@@ -33,11 +33,11 @@ from qgis.core import QgsVectorLayer, QgsCoordinateReferenceSystem
 from safe.common.testing import get_qgis_app
 from safe_qgis import breakdown_defaults
 from safe_qgis.safe_interface import (
+    UNITDATA,
     TESTDATA,
     BOUNDDATA,
     Raster,
-    Vector,
-    safe_read_layer)
+    Vector)
 
 from safe_qgis.utilities.utilities_for_testing import (
     set_canvas_crs,
@@ -433,8 +433,11 @@ class AggregatorTest(unittest.TestCase):
         self._aggregate(impact_layer, expected_results, use_aoi_mode=True)
 
         # Aggregation in class_count mode
+        data_path = os.path.join(UNITDATA,
+                                 'impact',
+                                 'aggregation_test_impact_vector_class_count.shp')
         impact_layer = Vector(
-            data=TESTDATA + '/aggregation_test_impact_vector_class_count.shp',
+            data=data_path,
             name='test vector impact')
         expected_results = [
             ['Entire area', '2', '3', '0']
