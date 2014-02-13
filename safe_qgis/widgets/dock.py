@@ -197,6 +197,13 @@ class Dock(QtGui.QDockWidget, Ui_DockBase):
         self.grpQuestion.setVisible(False)
         self.set_ok_button_status()
 
+    def __del__(self):
+        """Overload the del method to ensure webview is cleared first."""
+        self.disable_messaging()
+        self.disconnect_layer_listener()
+        self.wvResults.setHtml('')
+        QtGui.QDockWidget.__del__(self, None)
+
     def set_dock_title(self):
         """Set the title of the dock using the current version of InaSAFE."""
         long_version = get_version()
@@ -209,6 +216,31 @@ class Dock(QtGui.QDockWidget, Ui_DockBase):
             version_type = 'final'
             # Allowed version names: ('alpha', 'beta', 'rc', 'final')
         self.setWindowTitle(self.tr('InaSAFE %s %s' % (version, version_type)))
+
+    def disable_messaging(self):
+        """Clear up the dispatcher for messaging."""
+        # Set up dispatcher for dynamic messages
+        # Dynamic messages will not clear the message queue so will be appended
+        # to existing user messages
+        # noinspection PyArgumentEqualDefault
+        dispatcher.disconnect(
+            self.wvResults.dynamic_message_event,
+            signal=DYNAMIC_MESSAGE_SIGNAL,
+            sender=dispatcher.Any)
+        # Set up dispatcher for static messages
+        # Static messages clear the message queue and so the display is 'reset'
+        # noinspection PyArgumentEqualDefault
+        dispatcher.disconnect(
+            self.wvResults.static_message_event,
+            signal=STATIC_MESSAGE_SIGNAL,
+            sender=dispatcher.Any)
+        # Set up dispatcher for error messages
+        # Static messages clear the message queue and so the display is 'reset'
+        # noinspection PyArgumentEqualDefault
+        dispatcher.disconnect(
+            self.wvResults.error_message_event,
+            signal=ERROR_MESSAGE_SIG,
+            sender=dispatcher.Any)
 
     def enable_messaging(self):
         """Set up the dispatcher for messaging."""
