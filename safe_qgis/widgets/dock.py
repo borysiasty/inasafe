@@ -198,7 +198,12 @@ class Dock(QtGui.QDockWidget, Ui_DockBase):
         self.set_ok_button_status()
 
     def __del__(self):
-        """Overload the del method to ensure webview is cleared first."""
+        """Overload the del method to ensure webview is cleared first.
+
+        Added for partial fix of #787.
+
+        .. version_added:: 2.0
+        """
         self.disable_messaging()
         self.disconnect_layer_listener()
         self.wvResults.setHtml('')
@@ -218,10 +223,16 @@ class Dock(QtGui.QDockWidget, Ui_DockBase):
         self.setWindowTitle(self.tr('InaSAFE %s %s' % (version, version_type)))
 
     def disable_messaging(self):
-        """Clear up the dispatcher for messaging."""
-        # Set up dispatcher for dynamic messages
-        # Dynamic messages will not clear the message queue so will be appended
-        # to existing user messages
+        """Clear up the dispatcher for messaging.
+
+        Set up dispatcher for dynamic messages.
+        Dynamic messages will not clear the message queue so will be appended
+        to existing user messages.
+
+        Added for partial fix of #787.
+
+        .. version_added:: 2.0
+        """
         # noinspection PyArgumentEqualDefault
         dispatcher.disconnect(
             self.wvResults.dynamic_message_event,
