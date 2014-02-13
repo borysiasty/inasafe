@@ -424,6 +424,8 @@ class Plugin:
         any graphical user interface elements that should appear in QGIS.
         """
         # Remove the plugin menu item and icon
+        self.dock_widget.blockSignals(True)
+        self.iface.currentLayerChanged.disconnect(self.layer_changed)
         for myAction in self.actions:
             self.iface.removePluginMenu(self.tr('InaSAFE'), myAction)
             self.iface.removeToolBarIcon(myAction)
@@ -431,7 +433,6 @@ class Plugin:
         self.iface.mainWindow().removeToolBar(self.toolbar)
         self.dock_widget.setVisible(False)
         self.dock_widget.destroy()
-        self.iface.currentLayerChanged.disconnect(self.layer_changed)
 
         self.clear_modules()
 

@@ -204,6 +204,7 @@ class Dock(QtGui.QDockWidget, Ui_DockBase):
 
         .. version_added:: 2.0
         """
+        self.block_signals(self)
         self.disable_messaging()
         self.disconnect_layer_listener()
         self.wvResults.setHtml('')
